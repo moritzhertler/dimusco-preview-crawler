@@ -11,13 +11,13 @@ function activateSinglePageView() {
 		button.click();
 		console.log("switched to single page view");
 	} else {
-		console.log("single page view already active");
+		console.log("single page view already active");S
 	}
 }
 
 async function getDownloadDirectoryHandle() {
 	if (!'showOpenFilePicker' in self) {
-		console.error("File System Access API not supported, please use Chrome 86 or higher")
+		throw new Error("File System Access API not supported, please use Chrome 86 or higher!")
 	}
 
 	const directoryHandle = await window.showDirectoryPicker();
@@ -38,14 +38,19 @@ function next() {
 
 async function downloadImage(imageSrc, name, directoryHandle) {
   try {
+
     const image = await fetch(imageSrc);
     const imageBlob = await image.blob();
-	const fileHandle = await directoryHandle.getFileHandle(`${name}.png`, {create: true});
+
+	const fileName = `${name}.png`;
+	const fileHandle = await directoryHandle.getFileHandle(fileName, {create: true});
 	const writable = await fileHandle.createWritable();
 	await writable.write(imageBlob);
 	await writable.close();
-  } catch (error) {
-    console.log(error);
+
+} catch (error) {
+	console.error(`Failed to download and safe preview '${fileName}'!`);
+    console.error(error);
   }
 }
 
@@ -57,14 +62,15 @@ async function download(directoryHandle) {
     );
 }
 
+const TIMEOUT = 500; // ms
 let running = true;
 
 async function downloadLoop(directoryHandle) {
     while(running) {
        	await download(directoryHandle);
-		await wait(500);
+		await wait(TIMEOUT);
         running = next();
-        await wait(500);
+        await wait(TIMEOUT);
     }
 }
 
